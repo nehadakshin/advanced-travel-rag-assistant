@@ -425,4 +425,65 @@ travel-rag/
     ├── incremental_indexer.py
     └── evaluation.py
 ```
+## Key RAG Enhancements
 
+The following techniques were implemented to improve retrieval accuracy, response quality, performance, and reliability:
+
+### 1. Document Processing and Chunking
+- Implemented **Recursive Character Text Splitting** to divide documents into manageable chunks.
+- Configured a chunk size of 500 characters with 50-character overlap to preserve contextual continuity.
+- Added metadata such as source document, page number, chunk index, and start index for traceability.
+
+### 2. Embedding and Vector Search
+- Integrated Google's **Gemini `gemini-embedding-001`** model for generating document and query embeddings.
+- Used task-specific embedding configurations: `RETRIEVAL_DOCUMENT` for documents and `RETRIEVAL_QUERY` for user queries.
+- Implemented **FAISS vector search** with normalized embeddings and L2 distance-based similarity retrieval.
+- Introduced similarity threshold filtering (0.60) to exclude low-relevance chunks from the retrieved context.
+
+### 3. Contextual Retrieval and Answer Generation
+- Implemented **contextual question rewriting** to convert follow-up questions into standalone queries using conversation history.
+- Developed context assembly to organize retrieved chunks with unique source identifiers.
+- Designed grounded prompting to restrict responses to retrieved document context and minimize hallucinations.
+- Implemented source citation generation using identifiers such as `[S1]` and `[S2]`.
+- Added citation ID validation to verify that generated citations correspond to retrieved sources.
+
+### 4. Hallucination Control and Rejection Handling
+- Implemented relevance-based filtering to prevent unrelated document chunks from entering the generation context.
+- Added out-of-scope question handling to reject queries when sufficiently relevant information is unavailable.
+- Configured fallback responses to inform users when the uploaded knowledge base does not contain the requested information.
+
+### 5. Incremental Indexing and Performance Optimization
+- Implemented **hash-based document change detection** to identify new, modified, unchanged, and deleted documents.
+- Added incremental indexing to process only new or modified documents instead of rebuilding the entire vector database.
+- Implemented persistent FAISS storage to reuse existing embeddings and avoid unnecessary re-indexing during application startup.
+- Added staging and rollback mechanisms to improve reliability during index updates.
+
+### 6. Evaluation and Quality Assessment
+- Developed an evaluation pipeline with separate tests for answerable and out-of-scope questions.
+- Evaluated retrieval accuracy, source coverage, rejection accuracy, and response latency.
+- Integrated **LLM-as-a-Judge evaluation** using Gemini to assess faithfulness, relevance, completeness, and citation accuracy.
+- Maintained evaluation datasets and JSON reports for tracking system performance.
+
+### 7. Evaluation Results
+
+| Metric | Result |
+|---|---:|
+| Total test questions | 8 |
+| Answerable questions | 5 |
+| Out-of-scope questions | 3 |
+| Retrieval accuracy | 100% |
+| Rejection accuracy | 100% |
+| Average source coverage | 80% |
+| Average LLM judge score | 5/5 |
+| Average RAG latency | 1.28 seconds |
+
+*Note: Results are based on a small evaluation dataset and are intended to demonstrate the current prototype's performance, not production-level guarantees.*
+
+There are additional advanced RAG techniques we haven't implemented yet. These would be useful improvements in a future version:
+1. Hybrid Search: Combine semantic vector search with keyword-based BM25 search.
+2. Reranking: Retrieve more candidate chunks and use a reranker to select the most relevant ones.
+3. Query Expansion: Generate multiple search queries from one user question.
+4. Parent-Child Retrieval: Search smaller chunks but return their larger parent context.
+5. Multi-query Retrieval: Search using multiple reformulations of the original query.
+6. Semantic Chunking: Split documents based on changes in meaning rather than fixed character limits.
+7. Advanced evaluation: Use RAGAS or another evaluation framework for retrieval and generation metrics.
